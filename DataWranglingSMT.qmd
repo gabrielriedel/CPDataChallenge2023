@@ -1,0 +1,19 @@
+---
+title: "Data Wrangling SMT"
+format:
+  html:
+    theme: default
+---
+
+```{r Setup}
+library(tidyverse)
+```
+
+
+
+Importing the Data
+```{r}
+setwd("/Users/williamkapner/Documents/CPDataChallenge2023/smt_data_challenge_2023/game_info")
+read_csv("game_info-1900_01_TeamKJ_TeamB.csv")
+```
+
