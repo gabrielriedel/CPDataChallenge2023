@@ -13,7 +13,20 @@ library(tidyverse)
 
 Importing the Data
 ```{r}
-setwd("/Users/williamkapner/Documents/CPDataChallenge2023/smt_data_challenge_2023/game_info")
-read_csv("game_info-1900_01_TeamKJ_TeamB.csv")
+setwd("/Users/williamkapner/Documents/CPDataChallenge2023/game_info")
+gameinfo1 = read_csv("game_info-1900_01_TeamKJ_TeamB.csv")
+setwd("/Users/williamkapner/Documents/CPDataChallenge2023/ball_pos")
+location1 = read_csv("ball_pos-1900_01_TeamKJ_TeamB.csv")
+```
+
+```{r}
+baseball = geom_baseball(league="MLB")
+points = Location|>
+  filter(play_id==1)|>
+  ggplot(aes(x=ball_position_x,y=ball_position_y))+
+  geom_point()
+
+overlay = points + baseball
+
 ```
 
