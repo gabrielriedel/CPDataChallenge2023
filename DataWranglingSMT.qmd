@@ -18,6 +18,10 @@ setwd("/Users/williamkapner/Documents/CPDataChallenge2023/game_info")
 gameinfo1 = read_csv("game_info-1900_01_TeamKJ_TeamB.csv")
 setwd("/Users/williamkapner/Documents/CPDataChallenge2023/ball_pos")
 location1 = read_csv("ball_pos-1900_01_TeamKJ_TeamB.csv")
+setwd("/Users/williamkapner/Documents/CPDataChallenge2023/game_events")
+gameevents1 = read_csv("game_events-1900_01_TeamKJ_TeamB.csv")
+setwd("/Users/williamkapner/Documents/CPDataChallenge2023/player_pos_TeamA1")
+playerpos1 = read_csv("player_pos-1902_17_TeamMB_TeamA1.csv")
 ```
 Work in progress - Mapping play ids onto a baseball field
 need to change the scale
@@ -31,6 +35,8 @@ geom_baseball(league = "MLB")+
 
 ```
 
+
+Testing Ideas
 ```{r}
 
 ```
