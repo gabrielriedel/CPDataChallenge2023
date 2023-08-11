@@ -36,7 +36,12 @@ geom_baseball(league = "MLB")+
 ```
 
 
-Testing Ideas
+## Testing Ideas
+First Basemen ranging for ground balls toward second base
+first filter to where there's nobody on base
+then find ground balls to right side
+see when it turns out as a baserunner or an out
+who fielded it?
 ```{r}
 
 ```
