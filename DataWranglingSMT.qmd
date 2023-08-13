@@ -43,6 +43,9 @@ then find ground balls to right side
 see when it turns out as a baserunner or an out
 who fielded it?
 ```{r}
+gameinfo1|>
+  filter(first_baserunner==0, second_baserunner==0, third_baserunner == 0)
 
+plays = data.frame(game_str = character(0))
 ```
 
