@@ -34,9 +34,11 @@ a = location1|>
 joinedmaxtime = left_join(a, location1, by = "timestamp")
 
 ballpositionfiltered = joinedmaxtime|>
-  filter(ball_position_y<=50)
+  filter(ball_position_y<=50,ball_position_y>=5)
 
 semi_join(ballinplay,ballpositionfiltered, by = join_by("play_id"=="play_id.x"))
+
+
 ```
 
 
