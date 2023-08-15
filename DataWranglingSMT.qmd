@@ -23,6 +23,23 @@ gameevents1 = read_csv("game_events-1900_01_TeamKJ_TeamB.csv")
 setwd("/Users/williamkapner/Documents/CPDataChallenge2023/player_pos_TeamA1")
 playerpos1 = read_csv("player_pos-1902_17_TeamMB_TeamA1.csv")
 ```
+```{r}
+ballinplay = gameevents1|>
+  filter(event_code==4)
+
+a = location1|>
+  group_by(play_id)|>
+  summarise(timestamp = max(timestamp))
+
+joinedmaxtime = left_join(a, location1, by = "timestamp")
+
+ballpositionfiltered = joinedmaxtime|>
+  filter(ball_position_y<=50)
+
+semi_join(ballinplay,ballpositionfiltered, by = join_by("play_id"=="play_id.x"))
+```
+
+
 Work in progress - Mapping play ids onto a baseball field
 need to change the scale
 ```{r}
