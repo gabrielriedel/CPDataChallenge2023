@@ -1,8 +1,11 @@
 ---
 title: "Data Wrangling SMT"
+author: "Gabe Riedel, Johnny Young, Will Kapner"
 format:
   html:
     theme: default
+    warning: false
+    
 ---
 
 ```{r Setup}
@@ -41,6 +44,25 @@ ballpositionfiltered = joinedmaxtime|>
 semi_join(ballinplay,ballpositionfiltered, by = join_by("play_id"=="play_id.x"))
 
 
+```
+```{r}
+ballinplay = gameevents2|>
+  filter(player_position==5|player_position==3)
+
+right_join(gameevents2,ballinplay)
+
+
+
+a = location2|>
+  group_by(play_id)|>
+  summarise(timestamp = max(timestamp))
+
+joinedmaxtime = left_join(a, location2, by = "timestamp")
+
+ballpositionfiltered = joinedmaxtime|>
+  filter(ball_position_y<=50,ball_position_y>=5)
+
+semi_join(ballinplay,ballpositionfiltered, by = join_by("play_id"=="play_id.x"))
 ```
 
 
