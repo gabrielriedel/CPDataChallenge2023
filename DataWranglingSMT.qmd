@@ -33,6 +33,7 @@ a = location1|>
   group_by(play_id)|>
   summarise(timestamp = max(timestamp))
 
+
 joinedmaxtime = left_join(a, location1, by = "timestamp")
 
 ballpositionfiltered = joinedmaxtime|>
