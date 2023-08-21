@@ -25,7 +25,8 @@ JOIN ball_pos b
     AND g1.timestamp = b.timestamp
 WHERE g1.event_code = 2
 AND g2.event_code = 16
-AND b.ball_position_y > 5 AND b.ball_position_y < 50
+AND b.ball_position_y > 10 AND b.ball_position_y < 50
+AND b.ball_position_y > ABS(b.ball_position_x)
 ORDER BY g1.game_str, g1.id;
 "
 
@@ -38,3 +39,7 @@ View(bunt_table)
 data_fld <- geom_baseball('MLB', display_range = "infield")
 new_fld <- data_fld + geom_point(data = bunt_table, aes(x = ball_position_x, y = ball_position_y), color = "red", size = 1)
 new_fld
+
+
+
+
