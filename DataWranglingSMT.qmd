@@ -25,6 +25,8 @@ gameevents2 = read_csv("game_events-1900_02_TeamKJ_TeamB.csv")
 setwd("/Users/williamkapner/Documents/CPDataChallenge2023/player_pos_TeamA1")
 playerpos1 = read_csv("player_pos-1902_17_TeamMB_TeamA1.csv")
 ```
+
+
 ```{r}
 ballinplay = gameevents1|>
   filter(event_code==4)
@@ -41,6 +43,12 @@ ballpositionfiltered = joinedmaxtime|>
 
 semi_join(ballinplay,ballpositionfiltered, by = join_by("play_id"=="play_id.x"))
 
+
+```
+
+
+Function for reading all files
+```{r}
 
 ```
 
