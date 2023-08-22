@@ -79,6 +79,13 @@ View(bunt_table)
 ```
 
 
+Code to determine if a runner has scored
+```{r}
+runnerscore = function(){
+  
+}
+```
+
 
 
 
