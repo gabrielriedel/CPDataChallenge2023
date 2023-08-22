@@ -84,6 +84,33 @@ Code to determine if a runner has scored
 runnerscore = function(){
   
 }
+ncol(gameinfo1)
+print(gameinfo1[,18:21])
+
+
+which(gameinfo1$batter == 7225, arr.ind = TRUE)
+rower = which(gameinfo1[,18:21] == 7225, arr.ind = TRUE)
+
+
+view(gameinfo1)
+for (rownum in 1:10){
+  nextrownum <- rownum + 1
+  if (nextrownum <= 10) {
+      column_index <- matching_rows[matching_rows[, 1] == rownum, 2]
+      
+      if (df[next_row_index, column_index] == target) {
+        cat("Target number found in the same column in the next row.\n")
+      } else {
+        cat("Target number not found in the same column in the next row.\n")
+      }
+    } else {
+      cat("No next row to compare.\n")
+    }
+  else {
+  cat("Target number not found in the data frame.\n")
+    }
+  }
+
 ```
 
 
