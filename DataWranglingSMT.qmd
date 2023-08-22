@@ -89,7 +89,33 @@ print(gameinfo1[,18:21])
 
 
 which(gameinfo1$batter == 7225, arr.ind = TRUE)
-rower = which(gameinfo1[,18:21] == 7225, arr.ind = TRUE)
+runnerpos = which(gameinfo1[,18:21] == 7225, arr.ind = TRUE)
+length(rower)/2
+rower[[2]]
+rower[3,2]
+
+length(runnerpos)
+runnerpos[[5,2]]
+
+#Code for what base the runner was on before not being on base anymore
+count = 0
+for (i in 1:(length(runnerpos)/2)){
+  if (runnerpos[[i+1]]!=runnerpos[[i]]+1){
+    count = count + 1
+    print(runnerpos[[i,2]])
+    #if ()
+  }
+}
+count
+  
+#Code for when the inning changes from top to bottom
+nrow(gameinfo1)
+gameinfo1[[2,8]]==gameinfo1[[3,8]]
+for (j in 1:(nrow(gameinfo1)-1)){
+  if (gameinfo1[[j,8]]!=gameinfo1[[j+1,8]]){
+    print("new inning")
+  }
+}
 
 
 view(gameinfo1)
