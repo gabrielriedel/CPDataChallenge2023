@@ -98,8 +98,8 @@ new_fld
 
 # Calling draw functions
 
-field_play_draw(bunt_situation_table, 5)
-draw_play_after(bunt_situation_table, 5)
+field_play_draw(bunt_table, 8)
+draw_play_after(bunt_table, 8)
 
 
 
