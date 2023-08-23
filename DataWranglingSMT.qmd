@@ -81,9 +81,29 @@ View(bunt_table)
 
 Code to determine if a runner has scored
 ```{r}
-runnerscore = function(){
-  
+runnerscore = function(batter){
+  runnerpos = which(gameinfo1[,18:21] == batter, arr.ind = TRUE)
+  runnerpos2 = as.data.frame(runnerpos)
+  runnerpos2 = runnerpos2[order(runnerpos2$row), ]
+  for (i in 1:(nrow(runnerpos2)-1)){
+  if (runnerpos[i+1,1]!=runnerpos[i,1]+1){
+    count = count + 1
+    print(runnerpos2[i,1])
+    if(1 == runnerpos2[i,2]){
+    print("first base")
+  }
+  if(2 == runnerpos2[i,2]){
+    print("second base")
+  }
+  if(3 == runnerpos2[i,2]){
+    print("third base")
+  }
+
+  }
 }
+}
+
+runnerscore(7225)
 ncol(gameinfo1)
 print(gameinfo1[,18:21])
 
@@ -122,6 +142,8 @@ runnerpos = which(gameinfo1[,18:21] == 7225, arr.ind = TRUE)
 runnerpos2 = as.data.frame(runnerpos)
 runnerpos2 = runnerpos2[order(runnerpos2$row), ]
 runnerpos2[8,1]
+length(runnerpos2)
+nrow(runnerpos2)
 runnerscore = logical(length=count)
 
 idx = 0
