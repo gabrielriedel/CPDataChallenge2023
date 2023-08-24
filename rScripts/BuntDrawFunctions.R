@@ -22,6 +22,7 @@ runner_check_first2 <- function(dt, row_num){
   first <- dt[row_num, ]$first_baserunner
   second <- dt[row_num, ]$second_baserunner
   first2 <- dt[row_num, ]$first_baserunner_2
+  print(first2)
   
   if(batter == first2){
     return("white")
@@ -108,10 +109,9 @@ field_play_draw <- function(dt, row_num) {
 }
 
 
-
 # Draw field function that shows where runners are on the next play
 
-draw_play_after <- function(dt, row_num) {
+draw_play_after <- function(dt, gi, row_num) {
   
   field <- geom_baseball('MLB', display_range = "infield")
   
@@ -143,4 +143,7 @@ draw_play_after <- function(dt, row_num) {
   
 }
 
-a
+
+
+
+

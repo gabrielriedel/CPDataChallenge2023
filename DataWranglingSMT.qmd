@@ -108,6 +108,8 @@ ncol(gameinfo1)
 print(gameinfo1[,18:21])
 
 
+
+
 which(gameinfo1$batter == 7225, arr.ind = TRUE)
 runnerpos = which(gameinfo1[,18:21] == 7225, arr.ind = TRUE)
 length(rower)/2
