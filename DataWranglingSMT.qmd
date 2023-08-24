@@ -85,6 +85,12 @@ View(bunt_table)
 Code to determine if a runner has scored
 ```{r}
 13 %in% runnerpos2$row
+for(i in 1:(nrow(afterbuntplays)-1)){
+  if(afterbuntplays[i,1]!=afterbuntplays[i+1,1] | afterbuntplays[i,2]!=afterbuntplays[i+1,2]+1){
+    print(afterbuntplays[i+1,4:7])
+  }
+}
+
 runnerscore = function(batter){
   runnerpos = which(afterbuntplays[,4:7] == batter, arr.ind = TRUE)
   runnerpos2 = as.data.frame(runnerpos)
