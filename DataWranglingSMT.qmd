@@ -86,7 +86,7 @@ runnerscore = function(batter){
   runnerpos2 = as.data.frame(runnerpos)
   runnerpos2 = runnerpos2[order(runnerpos2$row), ]
   for (i in 1:(nrow(runnerpos2)-1)){
-  if (runnerpos[i+1,1]!=runnerpos[i,1]+1){
+  if (runnerpos2[i+1,1]!=runnerpos2[i,1]+1){
     count = count + 1
     print(runnerpos2[i,1])
     if(1 == runnerpos2[i,2]){
