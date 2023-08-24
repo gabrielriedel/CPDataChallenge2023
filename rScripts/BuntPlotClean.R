@@ -179,7 +179,6 @@ after_bunt_seq <- function(dt, row_num){
       
     }
     
-    final 
   
   }
   
@@ -188,9 +187,10 @@ after_bunt_seq <- function(dt, row_num){
 }
 
 
-trial <- after_bunt_seq(bunt_situation_table, 1)
-View(trial)
+after_bunt <- after_bunt_seq(bunt_situation_table, 1)
+View(after_bunt)
 
+write.csv(after_bunt, file = "after_bunt_plays.csv", row.names = FALSE)
 
 
 
