@@ -24,6 +24,9 @@ gameevents1 = read_csv("game_events-1900_01_TeamKJ_TeamB.csv")
 gameevents2 = read_csv("game_events-1900_02_TeamKJ_TeamB.csv")
 setwd("/Users/williamkapner/Documents/CPDataChallenge2023/player_pos_TeamA1")
 playerpos1 = read_csv("player_pos-1902_17_TeamMB_TeamA1.csv")
+setwd("/Users/williamkapner/Documents/CPDataChallenge2023")
+afterbuntplays = read_csv("after_bunt_plays.csv")
+
 ```
 
 
@@ -83,10 +86,10 @@ Code to determine if a runner has scored
 ```{r}
 13 %in% runnerpos2$row
 runnerscore = function(batter){
-  runnerpos = which(gameinfo1[,18:21] == batter, arr.ind = TRUE)
+  runnerpos = which(afterbuntplays[,4:7] == batter, arr.ind = TRUE)
   runnerpos2 = as.data.frame(runnerpos)
   runnerpos2 = runnerpos2[order(runnerpos2$row), ]
-  score = FALSE
+  score = 0
   for (i in 1:(nrow(runnerpos2)-1)){
     
   if (!(runnerpos2[i,1]+1 %in% runnerpos2$row)){
@@ -95,17 +98,13 @@ runnerscore = function(batter){
   if(3 == runnerpos2[i,2]){
     print("second base")
     if (gameinfo1[[j,8]]==gameinfo1[[j+1,8]]){
-      score = TRUE
-    } else{
-      score = FALSE
-    }
+      score = score + 1
+    } 
   }
   if(4 == runnerpos2[i,2]){
     print("third base")
     if (gameinfo1[[j,8]]==gameinfo1[[j+1,8]]){
-      score = TRUE
-    } else{
-      score = FALSE
+      score = score + 1
     }
   }
 
@@ -114,6 +113,7 @@ runnerscore = function(batter){
   return(score)
 }
 
+runnerscore(2653)
 runnerscore(7225)
 ncol(gameinfo1)
 print(gameinfo1[,18:21])
