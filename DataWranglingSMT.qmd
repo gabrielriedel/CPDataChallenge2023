@@ -86,28 +86,23 @@ runnerscore = function(batter){
   runnerpos = which(gameinfo1[,18:21] == batter, arr.ind = TRUE)
   runnerpos2 = as.data.frame(runnerpos)
   runnerpos2 = runnerpos2[order(runnerpos2$row), ]
+  score = FALSE
   for (i in 1:(nrow(runnerpos2)-1)){
     
-  if (runnerpos2[i,1]+1 %in% runnerpos2$row){
+  if (!(runnerpos2[i,1]+1 %in% runnerpos2$row)){
     count = count + 1
-    print(runnerpos2[i,1])
-    if(1 == runnerpos2[i,2]){
-    print("first base")
-    }
     
-  if(2 == runnerpos2[i,2]){
+  if(3 == runnerpos2[i,2]){
     print("second base")
-    if (gameinfo1[[j,8]]!=gameinfo1[[j+1,8]]){
-    print("new inning")
+    if (gameinfo1[[j,8]]==gameinfo1[[j+1,8]]){
       score = TRUE
     } else{
       score = FALSE
     }
   }
-  if(3 == runnerpos2[i,2]){
+  if(4 == runnerpos2[i,2]){
     print("third base")
-    if (gameinfo1[[j,8]]!=gameinfo1[[j+1,8]]){
-    print("new inning")
+    if (gameinfo1[[j,8]]==gameinfo1[[j+1,8]]){
       score = TRUE
     } else{
       score = FALSE
