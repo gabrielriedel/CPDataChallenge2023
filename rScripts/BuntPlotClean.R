@@ -49,11 +49,13 @@ bunt_situation_query <- "SELECT
     bt.ball_position_y,
     bt.ball_position_z,
     gi1.inning,
+    gi1.top_bottom_inning,
     gi1.batter,
     gi1.first_baserunner,
     gi1.second_baserunner,
     gi1.third_baserunner,
     gi2.inning AS inning_2,
+    gi2.top_bottom_inning AS top_bottom_inning2,
     gi2.batter AS batter_2,
     gi2.first_baserunner AS first_baserunner_2,
     gi2.second_baserunner AS second_baserunner_2,
@@ -69,11 +71,50 @@ WHERE gi1.top_bottom_inning = gi2.top_bottom_inning
     AND gi1.batter <> gi2.batter;
 "
 
+game_info_query <- "SELECT
+    gi.game_str,
+    gi.play_per_game,
+    gi.top_bottom_inning,
+    gi.batter,
+    gi.first_baserunner,
+    gi.second_baserunner,
+    gi.third_baserunner
+FROM game_info gi
+ORDER BY gi.game_str
+LIMIT 26315;
+"
+
+final_bunt_sit_query <- "SELECT
+    gi1.game_str,
+    gi1.play_per_game,
+    gi1.top_bottom_inning,
+    gi1.batter,
+    gi1.first_baserunner,
+    gi1.second_baserunner,
+    gi1.third_baserunner
+FROM bunt_table bt
+JOIN game_info gi1
+    ON bt.game_str = gi1.game_str
+    AND bt.play_per_game = gi1.play_per_game
+JOIN game_info gi2
+    ON bt.game_str = gi2.game_str
+    AND bt.play_per_game + 1 = gi2.play_per_game
+WHERE gi1.top_bottom_inning = gi2.top_bottom_inning
+    AND gi1.batter <> gi2.batter;
+"
 
 
 # Create new table of bunts cleaned by query
 bunt_table <- dbGetQuery(con, data_clean_query)
 bunt_situation_table <- dbGetQuery(con, bunt_situation_query)
+game_info <- dbGetQuery(con, game_info_query)
+final_bunt_sit <- dbGetQuery(con, final_bunt_sit_query)
+game_info[15581, "play_per_game"] <- 40
+game_info[18724, "play_per_game"] <- 149
+game_info[18725, "play_per_game"] <- 150
+game_info[18726, "play_per_game"] <- 151
+game_info[18727, "play_per_game"] <- 152
+game_info[18728, "play_per_game"] <- 153
 
 
 # Disconnect SQLite database
@@ -82,10 +123,9 @@ dbDisconnect(con)
 # View Data Tables
 View(bunt_table)
 View(bunt_situation_table)
-bunt_situation_table$first_baserunner
+View(game_info)
+View(final_bunt_sit)
 
-batter <- bunt_situation_table[2, ]$batter
-batter
 
 # Create visualization of infield with all plotted points for each bunt in table
 data_fld <- geom_baseball('MLB', display_range = "infield")
@@ -98,8 +138,62 @@ new_fld
 
 # Calling draw functions
 
-field_play_draw(bunt_table, 8)
-draw_play_after(bunt_table, 8)
+field_play_draw(bunt_situation_table, 7)
+draw_play_after(bunt_situation_table, 7)
+
+
+
+
+after_bunt_seq <- function(dt, row_num){
+  
+  column_names <- c("game_str", "play_per_game", "top_bottom_inning", "batter", "first_baserunner", "second_baserunner", "third_baserunner")
+  
+  specific_game_info <- data.frame(matrix(ncol = length(column_names), nrow = 0))
+  
+  colnames(specific_game_info) <- column_names 
+  
+  for (row_num in 1:nrow(dt)){
+    
+  
+    play_num <- as.numeric(dt[row_num, ]$play_per_game)
+    
+    top_or_bot <- dt[row_num, ]$top_bottom_inning
+    
+    play_game_str <- dt[row_num, ]$game_str
+  
+    current <- top_or_bot
+    
+    
+    
+    while(top_or_bot == current){
+      
+      copied_row <- game_info[game_info$game_str == play_game_str & game_info$play_per_game == play_num, ]
+      
+      specific_game_info <- rbind(specific_game_info, copied_row)
+      
+      
+      play_num <- play_num + 1
+      
+      current <- game_info[game_info$game_str == play_game_str & game_info$play_per_game == play_num, ]$top_bottom_inning
+      
+      
+    }
+    
+    final 
+  
+  }
+  
+  return(specific_game_info)
+  
+}
+
+
+trial <- after_bunt_seq(bunt_situation_table, 1)
+View(trial)
+
+
+
+
 
 
 
