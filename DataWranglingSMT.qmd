@@ -85,18 +85,37 @@ View(bunt_table)
 Code to determine if a runner has scored
 ```{r}
 13 %in% runnerpos2$row
-count = 0
+score = numeric(0)
+first = 2653
+second = 2196
+third = 0
 for(i in 1:(nrow(afterbuntplays)-1)){
+  count = 0
   if((afterbuntplays[[i,2]]+1)!=afterbuntplays[[i+1,2]]|afterbuntplays[i,1]!=afterbuntplays[i+1,1]){
-    afterbuntplays[i+1,4:7]
-    count = count+1
+    if (!(first %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    if (!(second %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    
+    if (!(third %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    score = append(score,count)
+    
+    first = afterbuntplays[i+1,5]
+    second = afterbuntplays[i+1,6]
+    third =  afterbuntplays[i+1,7]
   }
 }
 
+score
+length(score)
 count
 
 afterbuntplays[[1,2]]+1==afterbuntplays[[2,2]]
-
+2653  %in% afterbuntplays[1,4:7]
 
 runnerscore = function(batter){
   runnerpos = which(afterbuntplays[,4:7] == batter, arr.ind = TRUE)
