@@ -86,6 +86,7 @@ Code to determine if a runner has scored
 ```{r}
 13 %in% runnerpos2$row
 score = numeric(0)
+games = c()
 first = 2653
 second = 2196
 third = 0
@@ -108,32 +109,37 @@ for(i in 1:(nrow(afterbuntplays)-1)){
     }
     }
     score = append(score,count)
-    
+    games = append(games,afterbuntplays$game_str[i])
     first = afterbuntplays[i+1,5]
     second = afterbuntplays[i+1,6]
     third =  afterbuntplays[i+1,7]
   }
   if(i==(nrow(afterbuntplays)-1)){
     if(first!=0){
-    if (!(first %in% afterbuntplays[i,4:7])){
+    if (!(first %in% afterbuntplays[i+1,4:7])){
     count = count + 1
     }
     }
     if(second!=0){
-    if (!(second %in% afterbuntplays[i,4:7])){
+    if (!(second %in% afterbuntplays[i+1,4:7])){
     count = count + 1
     }
     }
     if(third!=0){
-    if (!(third %in% afterbuntplays[i,4:7])){
+    if (!(third %in% afterbuntplays[i+1,4:7])){
     count = count + 1
     }
     }
     score = append(score,count)
+    games = append(games,afterbuntplays$game_str[i+1])
   }
 }
 
 score
+games
+gamesnew = as.data.frame(games)
+scorenew = as.data.frame(score)
+fullscores = cbind(gamesnew,scorenew)
 length(score)
 count
 
