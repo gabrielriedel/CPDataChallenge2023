@@ -92,21 +92,44 @@ third = 0
 for(i in 1:(nrow(afterbuntplays)-1)){
   count = 0
   if((afterbuntplays[[i,2]]+1)!=afterbuntplays[[i+1,2]]|afterbuntplays[i,1]!=afterbuntplays[i+1,1]){
+    if(first!=0){
     if (!(first %in% afterbuntplays[i,4:7])){
     count = count + 1
     }
+    }
+    if(second!=0){
     if (!(second %in% afterbuntplays[i,4:7])){
     count = count + 1
     }
-    
+    }
+    if(third!=0){
     if (!(third %in% afterbuntplays[i,4:7])){
     count = count + 1
+    }
     }
     score = append(score,count)
     
     first = afterbuntplays[i+1,5]
     second = afterbuntplays[i+1,6]
     third =  afterbuntplays[i+1,7]
+  }
+  if(i==(nrow(afterbuntplays)-1)){
+    if(first!=0){
+    if (!(first %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    if(second!=0){
+    if (!(second %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    if(third!=0){
+    if (!(third %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    score = append(score,count)
   }
 }
 
