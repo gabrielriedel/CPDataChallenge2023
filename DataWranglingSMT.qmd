@@ -140,6 +140,7 @@ games
 gamesnew = as.data.frame(games)
 scorenew = as.data.frame(score)
 fullscores = cbind(gamesnew,scorenew)
+write.csv(fullscores, "fullbuntscores.csv", row.names = FALSE)
 length(score)
 count
 
