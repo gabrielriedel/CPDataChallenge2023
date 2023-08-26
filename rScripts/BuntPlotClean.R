@@ -1,3 +1,4 @@
+install.packages("sportyR")
 install.packages("DBI")
 install.packages("RSQLite")
 library(tidyverse)
@@ -5,15 +6,23 @@ library(sportyR)
 library(ggplot2)
 library(DBI)
 library(RSQLite)
+library(dplyr)
 source("BuntDrawFunctions.R")
 
 # Connect SQLite Data Base
-
 con <- dbConnect(RSQLite::SQLite(), "/Users/gaberiedel/Projects/DataChallenge/fldGame/Database/data_challenge.db")
 
 
-# SQL querys used to clean bunt data
+# SQL queries used to clean bunt data and create data tables:
 
+
+# SQL Query to get initial batch of plays that are bunts in one data table
+  # Conditions for bunt situation:
+  # Ball acquired (event_code == 2) immediately following a "ball bounce" (event_code == 16)
+  # Y coordinate position of ball when acquired: 10 units < y < 50 units
+  # Ball position is inside the base paths (satisfies the inequality y > abs(x))
+  # There is a runner at least on first base (could be another on second base because still considered a sac bunt situation)
+  # No runner on third base (situation then becomes squeeze not technically sac)
 data_clean_query <- "SELECT DISTINCT 
     g1.game_str, g1.id, g1.play_id, g1.at_bat, g1.play_per_game, 
     g1.timestamp, g1.player_position, g1.event_code, 
@@ -39,6 +48,12 @@ ORDER BY g1.game_str, g1.id;
 
 "
 
+
+# SQL query to get batch of bunts with more specific conditions; builds upon data table produced by previous query (table entitled "bunt_table")
+  # Further conditions include:
+  # Makes sure that the bunt is not the last play of the inning
+  # Makes sure that the batter id switches after play is over (eliminating error in data)
+  # Adds columns to view the runners on base of the play immediately following bunt play
 bunt_situation_query <- "SELECT
     bt.game_str,
     bt.play_per_game,
@@ -71,6 +86,8 @@ WHERE gi1.top_bottom_inning = gi2.top_bottom_inning
     AND gi1.batter <> gi2.batter;
 "
 
+
+# SQL query to pull in all of the game_info data tables into one large data table for easy access
 game_info_query <- "SELECT
     gi.game_str,
     gi.play_per_game,
@@ -84,6 +101,8 @@ ORDER BY gi.game_str
 LIMIT 26315;
 "
 
+
+# Final SQL query with the same conditions as "bunt_situation_query" but with a more narrowed down list of columns to view in the data table
 final_bunt_sit_query <- "SELECT
     gi1.game_str,
     gi1.play_per_game,
@@ -104,11 +123,17 @@ WHERE gi1.top_bottom_inning = gi2.top_bottom_inning
 "
 
 
-# Create new table of bunts cleaned by query
+# Create new data tables of bunts cleaned by queries
 bunt_table <- dbGetQuery(con, data_clean_query)
 bunt_situation_table <- dbGetQuery(con, bunt_situation_query)
 game_info <- dbGetQuery(con, game_info_query)
 final_bunt_sit <- dbGetQuery(con, final_bunt_sit_query)
+bunt_scores = read_csv("fullbuntscores.csv")
+bunt_scores_final <- inner_join(bunt_situation_table, bunt_scores, by = c("game_str" = "games"))
+bunt_scores_final <- bunt_scores_final[1:22, ]
+
+
+# game_info data table required fixes with inconsistencies with the incrementing of play_per_game
 game_info[15581, "play_per_game"] <- 40
 game_info[18724, "play_per_game"] <- 149
 game_info[18725, "play_per_game"] <- 150
@@ -125,25 +150,11 @@ View(bunt_table)
 View(bunt_situation_table)
 View(game_info)
 View(final_bunt_sit)
-
-
-# Create visualization of infield with all plotted points for each bunt in table
-data_fld <- geom_baseball('MLB', display_range = "infield")
-
-new_fld <- data_fld + geom_point(data = bunt_situation_table, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 1)
-
-new_fld
+View(bunt_scores)
 
 
 
-# Calling draw functions
-
-field_play_draw(bunt_situation_table, 7)
-draw_play_after(bunt_situation_table, 7)
-
-
-
-
+# Function extracts game_info rows for bunt plays and subsequent plays within the same inning, creating an ordered data table
 after_bunt_seq <- function(dt, row_num){
   
   column_names <- c("game_str", "play_per_game", "top_bottom_inning", "batter", "first_baserunner", "second_baserunner", "third_baserunner")
@@ -186,14 +197,9 @@ after_bunt_seq <- function(dt, row_num){
   
 }
 
-
+# Testing function --> turned after_bunt data table into CSV for easier sharing and use
 after_bunt <- after_bunt_seq(bunt_situation_table, 1)
 View(after_bunt)
-
-write.csv(after_bunt, file = "after_bunt_plays.csv", row.names = FALSE)
-
-
-
 
 
 
