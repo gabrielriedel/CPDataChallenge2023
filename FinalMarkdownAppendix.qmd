@@ -1,7 +1,17 @@
 ---
 title: "Final Markdown"
-format: html
-editor: visual
+author: "Will Kapner, Gabe Riedel, and Johnny Young"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    toc: true
+editor: source
+execute: 
+  error: true
+  echo: fenced
+  message: false
+  warning: false
 ---
 
 Loading in Packages
@@ -42,3 +52,69 @@ dbDisconnect(con)
 
 View(bunt_table)
 ```
+
+
+
+
+
+Code to determine if a runner has scored
+```{r}
+score = numeric(0)
+games = c()
+first = 2653
+second = 2196
+third = 0
+for(i in 1:(nrow(afterbuntplays)-1)){
+  count = 0
+  if((afterbuntplays[[i,2]]+1)!=afterbuntplays[[i+1,2]]|afterbuntplays[i,1]!=afterbuntplays[i+1,1]){
+    if(first!=0){
+    if (!(first %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    if(second!=0){
+    if (!(second %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    if(third!=0){
+    if (!(third %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    score = append(score,count)
+    games = append(games,afterbuntplays$game_str[i])
+    first = afterbuntplays[i+1,5]
+    second = afterbuntplays[i+1,6]
+    third =  afterbuntplays[i+1,7]
+  }
+  if(i==(nrow(afterbuntplays)-1)){
+    if(first!=0){
+    if (!(first %in% afterbuntplays[i+1,4:7])){
+    count = count + 1
+    }
+    }
+    if(second!=0){
+    if (!(second %in% afterbuntplays[i+1,4:7])){
+    count = count + 1
+    }
+    }
+    if(third!=0){
+    if (!(third %in% afterbuntplays[i+1,4:7])){
+    count = count + 1
+    }
+    }
+    score = append(score,count)
+    games = append(games,afterbuntplays$game_str[i+1])
+  }
+}
+
+score
+games
+gamesnew = as.data.frame(games)
+scorenew = as.data.frame(score)
+fullscores = cbind(gamesnew,scorenew)
+write.csv(fullscores, "fullbuntscores.csv", row.names = FALSE)
+```
+
+
