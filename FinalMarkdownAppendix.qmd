@@ -72,74 +72,13 @@ This code takes the locations of all the balls that were determined to be bunts 
 
 
 
-Code to determine if a runner has scored
+
+
+
+
+
+Function to Create visualization of infield with all plotted points for each bunt in table
 ```{r}
-score = numeric(0)
-games = c()
-first = 2653
-second = 2196
-third = 0
-for(i in 1:(nrow(afterbuntplays)-1)){
-  count = 0
-  if((afterbuntplays[[i,2]]+1)!=afterbuntplays[[i+1,2]]|afterbuntplays[i,1]!=afterbuntplays[i+1,1]){
-    if(first!=0){
-    if (!(first %in% afterbuntplays[i,4:7])){
-    count = count + 1
-    }
-    }
-    if(second!=0){
-    if (!(second %in% afterbuntplays[i,4:7])){
-    count = count + 1
-    }
-    }
-    if(third!=0){
-    if (!(third %in% afterbuntplays[i,4:7])){
-    count = count + 1
-    }
-    }
-    score = append(score,count)
-    games = append(games,afterbuntplays$game_str[i])
-    first = afterbuntplays[i+1,5]
-    second = afterbuntplays[i+1,6]
-    third =  afterbuntplays[i+1,7]
-  }
-  
-  if(i==(nrow(afterbuntplays)-1)){
-    if(first!=0){
-    if (!(first %in% afterbuntplays[i+1,4:7])){
-    count = count + 1
-    }
-    }
-    if(second!=0){
-    if (!(second %in% afterbuntplays[i+1,4:7])){
-    count = count + 1
-    }
-    }
-    if(third!=0){
-    if (!(third %in% afterbuntplays[i+1,4:7])){
-    count = count + 1
-    }
-    }
-    score = append(score,count)
-    games = append(games,afterbuntplays$game_str[i+1])
-  }
-}
-
-score
-games
-gamesnew = as.data.frame(games)
-scorenew = as.data.frame(score)
-fullscores = cbind(gamesnew,scorenew)
-write.csv(fullscores, "fullbuntscores.csv", row.names = FALSE)
-```
-This function looks at our final 22 bunt plays which are in the data file afterbuntplays. This data frame contains each play from the inning in which the bunt occurs, starting with the bunt play. The purpose of this code chunk is to determine which of the innings with a bunt resulted in the  offensive team scoring. First, it creates empty vectors for both the score and game string variables and  sets first, second, and third to be the player numbers for the runners on base after the first bunt. Then, the code looks at the line right before the inning ends by determining a change in the succession of play_per_game, or a change in the game string. If the players are no longer on base at the end of the inning, we determined that they had scored, because after being moved over with a sacrifice bunt, the probability of getting thrown out at a base is very small since we can assume most of the time, the runners are on second or third. If the runner isn't on base at the end of the inning, the score variable increments up by 1, determining that one of the runners that were on base after the bunt scored. Then, the game string and score for that inning are appended to their respective vectors. The second set of if statements deals with the same conditions for the last inning in the files. Then, the games and score vectors are combined into a data frame.
-
-
-
-
-Function to deter
-```{r}
-# Create visualization of infield with all plotted points for each bunt in table
 draw_all_bunts <- function(dt){
   
   # Create basic baseball field as ggplot using sportyR package; specified infield view
@@ -151,8 +90,12 @@ draw_all_bunts <- function(dt){
   # Draw field
   new_fld
 }
+```
 
-# Determines vector of the ids of the runners on base on a given play (including batter)
+
+
+Function Determines vector of the ids of the runners on base on a given play (including batter)
+```{r}
 runners_onbase <- function(dt, row_num){
   
   batter <- dt[row_num, ]$batter
@@ -163,8 +106,13 @@ runners_onbase <- function(dt, row_num){
   
   return(runner_ids)
 }
+```
 
 
+
+
+This set of functions is set to follow the runners as they move around bases using different colors
+```{r}
 # Runner check functions designed for "bunt_situation_table" which has data for locations of runners on base during bunt play and the following play
 # Important color code for runners: 
   # White = batter during bunt play
@@ -243,11 +191,16 @@ runner_check_thrid2 <- function(dt, row_num){
   
   
 }
+```
 
+
+
+This function looks at a bunt and graphs the movement of runners
+```{r}
 # Draw field function to draw an individual bunt
 field_play_draw <- function(dt, row_num) {
   
-  # Draw baseball field from sportypy
+  # Draw baseball field from sportyR
   field <- geom_baseball('MLB', display_range = "infield")
   
   # Store specific bunt play row of data
@@ -305,8 +258,12 @@ draw_play_after <- function(dt, row_num) {
   # Draw field
   field
 }
+```
 
-# Function determines whether specific bunt was runner movement success or failure
+
+
+Function determines whether specific bunt was runner movement success or failure
+```{r}
 # Success is defined by the lead runner moving up either one or two bases after the bunt play ends
 success_or_fail <- function(dt, row_num){
   
@@ -352,8 +309,76 @@ success_or_fail <- function(dt, row_num){
   }
   
 }
+```
 
-# Function determines whether specific bunt resulted in scoring success or failure
+
+
+Code to determine if a runner has scored
+```{r}
+score = numeric(0)
+games = c()
+first = 2653
+second = 2196
+third = 0
+for(i in 1:(nrow(afterbuntplays)-1)){
+  count = 0
+  if((afterbuntplays[[i,2]]+1)!=afterbuntplays[[i+1,2]]|afterbuntplays[i,1]!=afterbuntplays[i+1,1]){
+    if(first!=0){
+    if (!(first %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    if(second!=0){
+    if (!(second %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    if(third!=0){
+    if (!(third %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    score = append(score,count)
+    games = append(games,afterbuntplays$game_str[i])
+    first = afterbuntplays[i+1,5]
+    second = afterbuntplays[i+1,6]
+    third =  afterbuntplays[i+1,7]
+  }
+  
+  if(i==(nrow(afterbuntplays)-1)){
+    if(first!=0){
+    if (!(first %in% afterbuntplays[i+1,4:7])){
+    count = count + 1
+    }
+    }
+    if(second!=0){
+    if (!(second %in% afterbuntplays[i+1,4:7])){
+    count = count + 1
+    }
+    }
+    if(third!=0){
+    if (!(third %in% afterbuntplays[i+1,4:7])){
+    count = count + 1
+    }
+    }
+    score = append(score,count)
+    games = append(games,afterbuntplays$game_str[i+1])
+  }
+}
+
+score
+games
+gamesnew = as.data.frame(games)
+scorenew = as.data.frame(score)
+fullscores = cbind(gamesnew,scorenew)
+write.csv(fullscores, "fullbuntscores.csv", row.names = FALSE)
+```
+This function looks at our final 22 bunt plays which are in the data file afterbuntplays. This data frame contains each play from the inning in which the bunt occurs, starting with the bunt play. The purpose of this code chunk is to determine which of the innings with a bunt resulted in the  offensive team scoring. First, it creates empty vectors for both the score and game string variables and  sets first, second, and third to be the player numbers for the runners on base after the first bunt. Then, the code looks at the line right before the inning ends by determining a change in the succession of play_per_game, or a change in the game string. If the players are no longer on base at the end of the inning, we determined that they had scored, because after being moved over with a sacrifice bunt, the probability of getting thrown out at a base is very small since we can assume most of the time, the runners are on second or third. If the runner isn't on base at the end of the inning, the score variable increments up by 1, determining that one of the runners that were on base after the bunt scored. Then, the game string and score for that inning are appended to their respective vectors. The second set of if statements deals with the same conditions for the last inning in the files. Then, the games and score vectors are combined into a data frame.
+
+
+
+Function determines whether specific bunt resulted in scoring success or failure
+```{r}
 # Success is defined by the offense scoring in the inning after the sac bunt is laid
 score_s_or_f <- function(dt, row_num){
   
@@ -367,8 +392,14 @@ score_s_or_f <- function(dt, row_num){
     return("fail")
   }
 }
+```
+This function looks at the data frame for scoring created above and returns success if the score is nonzero and fail if the score is zero.
 
-# Function draws all bunts and colors them red or blue for runner movement success or fail respectively 
+
+
+
+Function draws all bunts and colors them red for runner movement success and blue for runner movement failure
+```{r}
 draw_success_fail <- function(dt){
   
   f <- 0
@@ -404,13 +435,18 @@ draw_success_fail <- function(dt){
   print(paste("Successes:", s))
   print(paste("Fails:", f))
 }
+```
 
-# Function draws all bunts and colors them red or blue for scoring success or fail respectively 
+
+
+
+Function draws all bunts and colors them red or blue for scoring success or fail respectively
+```{r}
 draw_success_fail_score <- function(dt){
   
   f <- 0
   s <- 0
-  # Draw baseball field from sportypy
+  # Draw baseball field from sportyR
   field <- geom_baseball('MLB', display_range = "infield")
   
   # Loops through each row of bunt plays
@@ -443,6 +479,8 @@ draw_success_fail_score <- function(dt){
   print(paste("Fails:", f))
 }
 ```
+
+
 
 
 This code block tests the drawing functions from above
