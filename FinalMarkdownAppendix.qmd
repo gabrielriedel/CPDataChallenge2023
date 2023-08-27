@@ -1,0 +1,44 @@
+---
+title: "Final Markdown"
+format: html
+editor: visual
+---
+
+Loading in Packages
+```{r Setup}
+library(tidyverse)
+library(sportyR)
+```
+
+
+
+Function for reading all files
+```{r}
+con <- dbConnect(RSQLite::SQLite(), "/Users/williamkapner/Documents/CPDataChallenge2023/data_challenge.db")
+
+
+# SQL query used to clean bunt data
+data_clean_query <- "
+SELECT DISTINCT 
+    g1.game_str, g1.id, g1.play_id, g1.at_bat, g1.play_per_game, 
+    g1.timestamp, g1.player_position, g1.event_code, 
+    b.ball_position_x, b.ball_position_y, b.ball_position_z
+FROM game_events g1
+JOIN game_events g2 
+    ON g1.game_str = g2.game_str
+    AND g1.id = CAST(CAST(g2.id AS INTEGER) + 1 AS TEXT)
+JOIN ball_pos b
+    ON g1.game_str = b.game_str
+    AND g1.timestamp = b.timestamp
+WHERE g1.event_code = 2
+AND g2.event_code = 16
+AND b.ball_position_y > 5 AND b.ball_position_y < 50
+ORDER BY g1.game_str, g1.id;
+"
+
+bunt_table <- dbGetQuery(con, data_clean_query)
+
+dbDisconnect(con)
+
+View(bunt_table)
+```
