@@ -11,7 +11,7 @@ draw_all_bunts <- function(dt){
   data_fld <- geom_baseball('MLB', display_range = "infield")
   
   # Add the (x,y) coordinates of each bunt play as geom_points to field graphic
-  new_fld <- data_fld + geom_point(data = dt, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 1)
+  new_fld <- data_fld + geom_point(data = dt, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 2)
   
   # Draw field
   new_fld
@@ -121,13 +121,13 @@ field_play_draw <- function(dt, row_num) {
   # If there is no runner on second, draw points for bunt (where acquired by defense), batter as white dot, first base runner as black dot
   if (play$second_baserunner == 0) {
     
-    bunt_field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 1) + geom_point(aes(x = 63, y = 63), color = "black", size = 3) + geom_point(aes(x = 0, y = 0), color = "white", size = 3)
+    bunt_field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 2) + geom_point(aes(x = 63, y = 63), color = "black", size = 3) + geom_point(aes(x = 0, y = 0), color = "white", size = 3)
   }
   
   # Else there will be a runner on first and second. So add the same points and a blue point for second base runner
   else {
     
-    bunt_field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 1) + geom_point(aes(x = 63, y = 63), color = "black", size = 3) + geom_point(aes(x = 0, y = 127), color = "blue", size = 3) + geom_point(aes(x = 0, y = 0), color = "white", size = 3)
+    bunt_field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 2) + geom_point(aes(x = 63, y = 63), color = "black", size = 3) + geom_point(aes(x = 0, y = 127), color = "blue", size = 3) + geom_point(aes(x = 0, y = 0), color = "white", size = 3)
   }
   
   # Draws bunt field
@@ -173,7 +173,7 @@ draw_play_after <- function(dt, row_num) {
 
 # Function determines whether specific bunt was runner movement success or failure
 # Success is defined by the lead runner moving up either one or two bases after the bunt play ends
-success_or_fail <- function(dt, row_num){
+movement_s_or_f <- function(dt, row_num){
   
   # Store IDs of runners on different bases for bunt play and following play
   first <- dt[row_num, ]$first_baserunner
@@ -234,7 +234,7 @@ score_s_or_f <- function(dt, row_num){
 }
 
 # Function draws all bunts and colors them red or blue for runner movement success or fail respectively 
-draw_success_fail <- function(dt){
+draw_movement_success_fail <- function(dt){
   
   f <- 0
   s <- 0
@@ -252,22 +252,24 @@ draw_success_fail <- function(dt){
     # If success, plot the position of bunt when ball acquired using red dot
     if(suc_or_fail == "success"){
       
-      field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 1)
+      field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 2)
       s <- s + 1
     }
     
     # Else fail, so plot the position of bunt when ball acquired using blue dot
     else{
-      field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "blue", size = 1)
+      field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "blue", size = 2)
       f <- f + 1
     }
     
   }
   
-  # Draw field
-  field
+  
   print(paste("Successes:", s))
   print(paste("Fails:", f))
+  
+  # Draw field
+  field
 }
 
 # Function draws all bunts and colors them red or blue for scoring success or fail respectively 
@@ -289,26 +291,56 @@ draw_success_fail_score <- function(dt){
     # If success, plot the position of bunt when ball acquired using red dot
     if(suc_or_fail == "success"){
       
-      field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 1)
+      field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 2)
       s <- s + 1
     }
     
     # Else fail, so plot the position of bunt when ball acquired using blue dot
     else{
-      field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "blue", size = 1)
+      field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "blue", size = 2)
       f <- f + 1
     }
     
   }
   
-  # Draw field
-  field
+  
   
   print(paste("Successes:", s))
   print(paste("Fails:", f))
+  
+  # Draw field
+  field
 }
 
+# Function creates histogram to compare success and failures from runner movement model
+draw_movement_histogram <- function(){
+  # Create a data frame with success and fail categories and their respective values
+  data <- data.frame(
+    category = rep(c("Success", "Failure"), each = 13),
+    value = c(rep(19, 13), rep(3, 13))
+  )
+  
+  # Create the side-by-side histograms
+  ggplot(data, aes(x = category, y = value, fill = category)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    labs(title = "Runner Movement Model Sucess vs. Failure", x = "Success or Failure", y = "Count") +
+    scale_fill_manual(values = c("Success" = "red", "Failure" = "blue"))
+}
 
+# Function creates histogram to compare success and failures from scoring model
+draw_score_histogram <- function(){
+  # Create a data frame with success and fail categories and their respective values
+  data <- data.frame(
+    category = rep(c("Success", "Failure"), each = 13),
+    value = c(rep(13, 13), rep(9, 13))
+  )
+  
+  # Create the side-by-side histograms
+  ggplot(data, aes(x = category, y = value, fill = category)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    labs(title = "Scoring Model Sucess vs. Failure", x = "Success or Failure", y = "Count") +
+    scale_fill_manual(values = c("Success" = "red", "Failure" = "blue"))
+}
 
 
 
