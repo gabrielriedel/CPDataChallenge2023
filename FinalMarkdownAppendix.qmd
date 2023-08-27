@@ -21,6 +21,7 @@ library(tidyverse)
 library(sportyR)
 library(DBI)
 library(RSQLite)
+afterbuntplays = read_csv("after_bunt_plays.csv")
 ```
 
 
@@ -102,6 +103,7 @@ for(i in 1:(nrow(afterbuntplays)-1)){
     second = afterbuntplays[i+1,6]
     third =  afterbuntplays[i+1,7]
   }
+  
   if(i==(nrow(afterbuntplays)-1)){
     if(first!=0){
     if (!(first %in% afterbuntplays[i+1,4:7])){
@@ -130,9 +132,12 @@ scorenew = as.data.frame(score)
 fullscores = cbind(gamesnew,scorenew)
 write.csv(fullscores, "fullbuntscores.csv", row.names = FALSE)
 ```
+This function looks at our final 22 bunt plays which are in the data file afterbuntplays. This data frame contains each play from the inning in which the bunt occurs, starting with the bunt play. The purpose of this code chunk is to determine which of the innings with a bunt resulted in the  offensive team scoring. First, it creates empty vectors for both the score and game string variables and  sets first, second, and third to be the player numbers for the runners on base after the first bunt. Then, the code looks at the line right before the inning ends by determining a change in the succession of play_per_game, or a change in the game string. If the players are no longer on base at the end of the inning, we determined that they had scored, because after being moved over with a sacrifice bunt, the probability of getting thrown out at a base is very small since we can assume most of the time, the runners are on second or third. If the runner isn't on base at the end of the inning, the score variable increments up by 1, determining that one of the runners that were on base after the bunt scored. Then, the game string and score for that inning are appended to their respective vectors. The second set of if statements deals with the same conditions for the last inning in the files. Then, the games and score vectors are combined into a data frame.
 
 
 
+
+Function to deter
 ```{r}
 # Create visualization of infield with all plotted points for each bunt in table
 draw_all_bunts <- function(dt){
