@@ -1,6 +1,5 @@
 ---
 title: "SMT Data Challenge Final Markdown"
-author: "Will Kapner, Gabe Riedel, and Johnny Young"
 format: 
   html:
     self-contained: true
@@ -22,6 +21,7 @@ library(sportyR)
 library(DBI)
 library(RSQLite)
 afterbuntplays = read_csv("after_bunt_plays.csv")
+bunt_situation_table = read_csv("")
 ```
 
 
@@ -359,8 +359,6 @@ for(i in 1:(nrow(afterbuntplays)-1)){
   }
 }
 
-score
-games
 gamesnew = as.data.frame(games)
 scorenew = as.data.frame(score)
 fullscores = cbind(gamesnew,scorenew)
