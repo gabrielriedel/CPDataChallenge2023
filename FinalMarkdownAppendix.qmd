@@ -74,9 +74,6 @@ This code takes the locations of all the balls that were determined to be bunts 
 
 
 
-
-
-
 Function to Create visualization of infield with all plotted points for each bunt in table
 ```{r}
 draw_all_bunts <- function(dt){
@@ -107,7 +104,7 @@ runners_onbase <- function(dt, row_num){
   return(runner_ids)
 }
 ```
-
+This function takes in a data table as well as a row number and returns the ids of the runners that were on base for that play. This function will be used later in another code chunk.
 
 
 
@@ -192,6 +189,7 @@ runner_check_thrid2 <- function(dt, row_num){
   
 }
 ```
+This set of functions looks at a specific row of a data table and tracks the runners on the field after the play. First, the function gathers the ids of the players on each base at the beginning of the plays and assigns them each a color. Then, the following functions make sure that even when the runners move from their original positions, their corresponding colors will remain the same to make it easier to track their movement on the basepaths.
 
 
 
@@ -259,7 +257,7 @@ draw_play_after <- function(dt, row_num) {
   field
 }
 ```
-
+This code set uses the functions from above to track the movement of baserunners on bunts. The function draws points on a field of where the baserunners are before the bunt, and then shows the location the fielder picked up the bunt as well as where the runners moved to after the bunt play.
 
 
 Function determines whether specific bunt was runner movement success or failure
@@ -310,6 +308,7 @@ success_or_fail <- function(dt, row_num){
   
 }
 ```
+This function tracks if the runners move up due to a bunt play. Initially, we looked at the positions of baserunners on the play before the bunt and then right after the bunt. Then, using if statements, we looked at whether the baserunners moved up a base after the bunt play. If the player id for a baserunner matches the player id for the baserunner on the next base on the next play, then the bunt was considered a success. Otherwise, the bunt was a failure.
 
 
 
@@ -371,7 +370,7 @@ games
 gamesnew = as.data.frame(games)
 scorenew = as.data.frame(score)
 fullscores = cbind(gamesnew,scorenew)
-write.csv(fullscores, "fullbuntscores.csv", row.names = FALSE)
+fullscores
 ```
 This function looks at our final 22 bunt plays which are in the data file afterbuntplays. This data frame contains each play from the inning in which the bunt occurs, starting with the bunt play. The purpose of this code chunk is to determine which of the innings with a bunt resulted in the  offensive team scoring. First, it creates empty vectors for both the score and game string variables and  sets first, second, and third to be the player numbers for the runners on base after the first bunt. Then, the code looks at the line right before the inning ends by determining a change in the succession of play_per_game, or a change in the game string. If the players are no longer on base at the end of the inning, we determined that they had scored, because after being moved over with a sacrifice bunt, the probability of getting thrown out at a base is very small since we can assume most of the time, the runners are on second or third. If the runner isn't on base at the end of the inning, the score variable increments up by 1, determining that one of the runners that were on base after the bunt scored. Then, the game string and score for that inning are appended to their respective vectors. The second set of if statements deals with the same conditions for the last inning in the files. Then, the games and score vectors are combined into a data frame.
 
