@@ -62,17 +62,6 @@ This code uses a sequel query that finds all the bunts from all the games in the
 
 
 
-Graphing the Bunts on an Infield
-```{r}
-data_fld <- geom_baseball('MLB', display_range = "infield")
-new_fld <- data_fld + geom_point(data = bunt_table, aes(x = ball_position_x, y = ball_position_y), color = "red", size = 1)
-new_fld
-```
-This code takes the locations of all the balls that were determined to be bunts above and graphs them on a baseball infield.
-
-
-
-
 
 Function to Create visualization of infield with all plotted points for each bunt in table
 ```{r}
@@ -87,6 +76,7 @@ draw_all_bunts <- function(dt){
   # Draw field
   new_fld
 }
+draw_all_bunts(bunt_situation_table)
 ```
 
 
@@ -220,6 +210,7 @@ field_play_draw <- function(dt, row_num) {
   bunt_field
   
 }
+field_play_draw(bunt_situation_table, 7)
 
 # Draw field function that shows where runners are on the next play
 draw_play_after <- function(dt, row_num) {
@@ -256,6 +247,8 @@ draw_play_after <- function(dt, row_num) {
   # Draw field
   field
 }
+
+draw_play_after(bunt_situation_table, 7)
 ```
 This code set uses the functions from above to track the movement of baserunners on bunts. The function draws points on a field of where the baserunners are before the bunt, and then shows the location the fielder picked up the bunt as well as where the runners moved to after the bunt play.
 
@@ -307,6 +300,7 @@ success_or_fail <- function(dt, row_num){
   }
   
 }
+success_or_fail(bunt_situation_table, 7)
 ```
 This function tracks if the runners move up due to a bunt play. Initially, we looked at the positions of baserunners on the play before the bunt and then right after the bunt. Then, using if statements, we looked at whether the baserunners moved up a base after the bunt play. If the player id for a baserunner matches the player id for a further advanced baserunner on the next play, then the bunt was considered a success. Otherwise, the bunt was a failure.
 
@@ -434,6 +428,7 @@ draw_success_fail <- function(dt){
   print(paste("Successes:", s))
   print(paste("Fails:", f))
 }
+draw_success_fail(bunt_situation_table)
 ```
 This function looks at whether the bunt play was successful or unsuccessful for moving runners forward. Using the sportyR package, we plotted all the successful bunts in the data frame as red dots and all the unsuccessful bunts in the data frame as blue dots. Then, the function graphs all the bunts by color on an infield.
 
@@ -477,18 +472,9 @@ draw_success_fail_score <- function(dt){
   print(paste("Successes:", s))
   print(paste("Fails:", f))
 }
+draw_success_fail_score(bunt_scores_final)
 ```
 This function looks at whether the bunt play was successful or unsuccessful for scoring in the inning. Using the sportyR package, we plotted all the successful bunts in the data frame as red dots and all the unsuccessful bunts in the data frame as blue dots. Then, the function graphs all the bunts by color on an infield.
 
 
-
-This code block tests the drawing functions from above
-```{r}
-draw_all_bunts(bunt_situation_table)
-field_play_draw(bunt_situation_table, 7)
-draw_play_after(bunt_situation_table, 7)
-success_or_fail(bunt_situation_table, 7)
-draw_success_fail(bunt_situation_table)
-draw_success_fail_score(bunt_scores_final)
-```
 
