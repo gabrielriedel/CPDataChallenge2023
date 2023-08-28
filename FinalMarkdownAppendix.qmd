@@ -1,5 +1,5 @@
 ---
-title: "Final Markdown"
+title: "SMT Data Challenge Final Markdown"
 author: "Will Kapner, Gabe Riedel, and Johnny Young"
 format: 
   html:
@@ -308,7 +308,7 @@ success_or_fail <- function(dt, row_num){
   
 }
 ```
-This function tracks if the runners move up due to a bunt play. Initially, we looked at the positions of baserunners on the play before the bunt and then right after the bunt. Then, using if statements, we looked at whether the baserunners moved up a base after the bunt play. If the player id for a baserunner matches the player id for the baserunner on the next base on the next play, then the bunt was considered a success. Otherwise, the bunt was a failure.
+This function tracks if the runners move up due to a bunt play. Initially, we looked at the positions of baserunners on the play before the bunt and then right after the bunt. Then, using if statements, we looked at whether the baserunners moved up a base after the bunt play. If the player id for a baserunner matches the player id for a further advanced baserunner on the next play, then the bunt was considered a success. Otherwise, the bunt was a failure.
 
 
 
@@ -435,7 +435,7 @@ draw_success_fail <- function(dt){
   print(paste("Fails:", f))
 }
 ```
-
+This function looks at whether the bunt play was successful or unsuccessful for moving runners forward. Using the sportyR package, we plotted all the successful bunts in the data frame as red dots and all the unsuccessful bunts in the data frame as blue dots. Then, the function graphs all the bunts by color on an infield.
 
 
 
@@ -478,7 +478,7 @@ draw_success_fail_score <- function(dt){
   print(paste("Fails:", f))
 }
 ```
-
+This function looks at whether the bunt play was successful or unsuccessful for scoring in the inning. Using the sportyR package, we plotted all the successful bunts in the data frame as red dots and all the unsuccessful bunts in the data frame as blue dots. Then, the function graphs all the bunts by color on an infield.
 
 
 
