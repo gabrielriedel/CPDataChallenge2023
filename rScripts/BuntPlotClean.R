@@ -200,6 +200,7 @@ after_bunt_seq <- function(dt, row_num){
 # Testing function --> turned after_bunt data table into CSV for easier sharing and use
 after_bunt <- after_bunt_seq(bunt_situation_table, 1)
 View(after_bunt)
+bunt_scores = read_csv("fullbuntscores.csv")
 
 
 
