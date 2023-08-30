@@ -10,3 +10,4 @@ install.packages("sportyR")
 install.packages("DBI")
 install.packages("RSQLite")
 ```
+Also, in order to run the SQL queries in the R scripts you need to have downlaoded our SQLite database. You can find it in the DatabaseLink file in our main git hub repo.
