@@ -1,0 +1,738 @@
+---
+title: "SMT Data Challenge Final Markdown"
+format: 
+  html:
+    self-contained: true
+    code-tools: true
+    toc: true
+editor: source
+execute: 
+  error: true
+  echo: fenced
+  message: false
+  warning: false
+---
+
+
+Loading in Packages
+```{r Setup}
+library(here)
+library(tidyverse)
+library(sportyR)
+library(DBI)
+library(RSQLite)
+here::i_am("FinalMarkdownAppendix.qmd")
+afterbuntplays <- read.csv(here::here("csv_folder/after_bunt_plays.csv"))
+```
+
+
+
+Connecting to SQLite Database. Proceeding SQL queries are used to wrangle the data and create useful data frames.
+```{r}
+con <- dbConnect(RSQLite::SQLite(), "/Users/gaberiedel/Projects/DataChallenge/fldGame/Database/data_challenge.db")
+```
+
+
+
+This code uses a SQL query that finds all the bunts from all the games in the SMT database. It does this by selecting the plays where the ball is a ground ball, which was determined using event_code values of 16 matched up with player_position values of 255 which corresponded to a ball bouncing without a position. We then determined that we would determine a bunt as any ground ball that is picked up with a y position of between 10 and 50 which was filtered as well. The code then returns a data table where each line is a distinct bunt and returns the  position of the ball when it is first picked up.
+```{r}
+# SQL Query to get initial batch of plays that are bunts in one data table
+  # Conditions for bunt situation:
+  # Ball acquired (event_code == 2) immediately following a "ball bounce" (event_code == 16)
+  # Y coordinate position of ball when acquired: 10 units < y < 50 units
+  # Ball position is inside the base paths (satisfies the inequality y > abs(x))
+  # There is a runner at least on first base (could be another on second base because still considered a sacrifice bunt situation)
+  # No runner on third base (situation then becomes squeeze not technically sacrifice)
+
+data_clean_query <- "SELECT DISTINCT 
+    g1.game_str, g1.id, g1.play_id, g1.at_bat, g1.play_per_game, 
+    g1.timestamp, g1.player_position, g1.event_code, 
+    b.ball_position_x, b.ball_position_y, b.ball_position_z,
+    gi.first_baserunner, gi.second_baserunner
+FROM game_events g1
+JOIN game_events g2 
+    ON g1.game_str = g2.game_str
+    AND g1.id = CAST(CAST(g2.id AS INTEGER) + 1 AS TEXT)
+JOIN ball_pos b
+    ON g1.game_str = b.game_str
+    AND g1.timestamp = b.timestamp
+JOIN game_info gi
+    ON g1.game_str = gi.game_str
+    AND g1.play_per_game = gi.play_per_game
+WHERE g1.event_code = 2
+AND g2.event_code = 16
+AND b.ball_position_y > 10 AND b.ball_position_y < 50
+AND b.ball_position_y > ABS(b.ball_position_x)
+AND gi.first_baserunner <> 0
+AND gi.third_baserunner = 0
+ORDER BY g1.game_str, g1.id;
+
+"
+
+bunt_table <- dbGetQuery(con, data_clean_query)
+
+```
+
+
+
+This SQL query builds upon the previous 'bunt_table' to further wrangle our data into a table with more specific sacrifice bunt situation parameters. It makes sure that the bunt play is not the last play in the inning and it lets us see the data from the immediate next play after the bunt.
+```{r}
+# SQL query to get batch of bunts with more specific conditions; builds upon data table produced by previous query (table entitled "bunt_table")
+  # Further conditions include:
+  # Makes sure that the bunt is not the last play of the inning
+  # Makes sure that the batter id switches after play is over (eliminating error in data)
+  # Adds columns to view the runners on base of the play immediately following bunt play
+bunt_situation_query <- "SELECT
+    bt.game_str,
+    bt.play_per_game,
+    bt.timestamp,
+    bt.player_position,
+    bt.event_code,
+    bt.ball_position_x,
+    bt.ball_position_y,
+    bt.ball_position_z,
+    gi1.inning,
+    gi1.top_bottom_inning,
+    gi1.batter,
+    gi1.first_baserunner,
+    gi1.second_baserunner,
+    gi1.third_baserunner,
+    gi2.inning AS inning_2,
+    gi2.top_bottom_inning AS top_bottom_inning2,
+    gi2.batter AS batter_2,
+    gi2.first_baserunner AS first_baserunner_2,
+    gi2.second_baserunner AS second_baserunner_2,
+    gi2.third_baserunner AS third_baserunner_2
+FROM bunt_table bt
+JOIN game_info gi1
+    ON bt.game_str = gi1.game_str
+    AND bt.play_per_game = gi1.play_per_game
+JOIN game_info gi2
+    ON bt.game_str = gi2.game_str
+    AND bt.play_per_game + 1 = gi2.play_per_game
+WHERE gi1.top_bottom_inning = gi2.top_bottom_inning
+    AND gi1.batter <> gi2.batter;
+    
+"
+
+bunt_situation_table <- dbGetQuery(con, bunt_situation_query)
+```
+
+
+
+This query loads in all of the data from the game_info table in order to have easy access.
+```{r}
+# SQL query to pull in all of the game_info data tables into one large data table for easy access
+game_info_query <- "SELECT
+    gi.game_str,
+    gi.play_per_game,
+    gi.top_bottom_inning,
+    gi.batter,
+    gi.first_baserunner,
+    gi.second_baserunner,
+    gi.third_baserunner
+FROM game_info gi
+ORDER BY gi.game_str
+LIMIT 26315;
+"
+
+game_info <- dbGetQuery(con, game_info_query)
+
+# game_info data table required fixes with inconsistencies with the incrementing of play_per_game
+game_info[15581, "play_per_game"] <- 40
+game_info[18724, "play_per_game"] <- 149
+game_info[18725, "play_per_game"] <- 150
+game_info[18726, "play_per_game"] <- 151
+game_info[18727, "play_per_game"] <- 152
+game_info[18728, "play_per_game"] <- 153
+
+```
+
+
+
+Final SQL query with the same conditions as "bunt_situation_query" but with a more narrowed down list of columns to view in the data table
+```{r}
+final_bunt_sit_query <- "SELECT
+    gi1.game_str,
+    gi1.play_per_game,
+    gi1.top_bottom_inning,
+    gi1.batter,
+    gi1.first_baserunner,
+    gi1.second_baserunner,
+    gi1.third_baserunner
+FROM bunt_table bt
+JOIN game_info gi1
+    ON bt.game_str = gi1.game_str
+    AND bt.play_per_game = gi1.play_per_game
+JOIN game_info gi2
+    ON bt.game_str = gi2.game_str
+    AND bt.play_per_game + 1 = gi2.play_per_game
+WHERE gi1.top_bottom_inning = gi2.top_bottom_inning
+    AND gi1.batter <> gi2.batter;
+"
+
+final_bunt_sit <- dbGetQuery(con, final_bunt_sit_query)
+
+
+# Disconnect SQLite database
+dbDisconnect(con)
+```
+
+
+This code creates reads in a csv and makes a new data table that shows how many runs were scored in the inning after each bunt. It then attaches that new row of data to the already created bunt_situation_table.
+```{r}
+bunt_scores = read_csv(here::here("csv_folder/fullbuntscores.csv"))
+bunt_scores_final <- inner_join(bunt_situation_table, bunt_scores, by = c("game_str" = "games"))
+bunt_scores_final <- bunt_scores_final[1:22, ]
+```
+
+
+
+This function extracts game_info rows for bunt plays and subsequent plays within the same inning, creating an ordered data table
+```{r}
+after_bunt_seq <- function(dt, row_num){
+  
+  # Column names for new data frame to be created
+  column_names <- c("game_str", "play_per_game", "top_bottom_inning", "batter", "first_baserunner", "second_baserunner", "third_baserunner")
+  
+  # Create new data frame to fill rows with
+  specific_game_info <- data.frame(matrix(ncol = length(column_names), nrow = 0))
+  
+  # Assigns column names to new data frame
+  colnames(specific_game_info) <- column_names 
+  
+  # Loops through all bunt plays 
+  for (row_num in 1:nrow(dt)){
+    
+    # Stores current play_per_game
+    play_num <- as.numeric(dt[row_num, ]$play_per_game)
+    
+    # Stores the state of the inning (top or bottom)
+    top_or_bot <- dt[row_num, ]$top_bottom_inning
+    
+    # Stores current game_str
+    play_game_str <- dt[row_num, ]$game_str
+    
+    # Stores current state of inning in current variable (to be changed in value)
+    current <- top_or_bot
+    
+    # While the current state of the inning is the same as the original bunt play, continue looping
+    while(top_or_bot == current){
+      
+      # Copy the row from game_info that matches the game_str and current play_per_game
+      copied_row <- game_info[game_info$game_str == play_game_str & game_info$play_per_game == play_num, ]
+      
+      # Add copied row to the data frame
+      specific_game_info <- rbind(specific_game_info, copied_row)
+      
+      # Increment current play_per_game
+      play_num <- play_num + 1
+      
+      # Store the current inning state after play_per_game incrementation
+      current <- game_info[game_info$game_str == play_game_str & game_info$play_per_game == play_num, ]$top_bottom_inning
+    }
+  }
+  # Returns final data table
+  return(specific_game_info)
+}
+
+```
+
+
+
+Function to Create visualization of infield with all plotted points for each bunt in table
+```{r}
+draw_all_bunts <- function(dt){
+  
+  # Create basic baseball field as ggplot using sportypy package; specified infield view
+  data_fld <- geom_baseball('MLB', display_range = "infield")
+  
+  # Add the (x,y) coordinates of each bunt play as geom_points to field graphic
+  new_fld <- data_fld + geom_point(data = dt, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 2)
+  
+  # Draw field
+  new_fld
+}
+draw_all_bunts(bunt_situation_table)
+```
+
+
+
+Function determines vector of the ids of the runners on base on a given play (including batter)
+```{r}
+runners_onbase <- function(dt, row_num){
+  
+  batter <- dt[row_num, ]$batter
+  first <- dt[row_num, ]$first_baserunner
+  second <- dt[row_num, ]$second_baserunner
+  
+  runner_ids <- c(batter, first, second)
+  
+  return(runner_ids)
+}
+```
+This function takes in a data table as well as a row number and returns the ids of the runners that were on base for that play. This function will be used later in another code chunk.
+
+
+
+This set of functions is set to follow the runners as they move around bases using different colors
+```{r}
+# Runner check functions designed for "bunt_situation_table" which has data for locations of runners on base during bunt play and the following play
+# Important color code for runners: 
+  # White = batter during bunt play
+  # Black = runner on first during bunt_play
+  # Blue = runner on second during bunt_play
+  # No runners will be on third due to nature of sac bunt conditions
+# Runner check functions used in draw_play_after to follow runners from bunt play to next play and keep their color code
+# Returns color code of which player is on each base
+
+runner_check_first2 <- function(dt, row_num){
+  # Store IDs of runners and batters
+  batter <- dt[row_num, ]$batter
+  first <- dt[row_num, ]$first_baserunner
+  second <- dt[row_num, ]$second_baserunner
+  first2 <- dt[row_num, ]$first_baserunner_2
+  
+  # Compare ID of runner on first during play after bunt to IDs of other runners
+  if(batter == first2){
+    return("white")
+  }
+  else if(first == first2){
+    return("black")
+  }
+  else if(second == first2){
+    return("blue")
+  }
+  else{
+    return("pink")
+  }
+  
+}
+
+runner_check_second2 <- function(dt, row_num){
+  # Store IDs of runners and batters
+  batter <- dt[row_num, ]$batter
+  first <- dt[row_num, ]$first_baserunner
+  second <- dt[row_num, ]$second_baserunner
+  second2 <- dt[row_num, ]$second_baserunner_2
+  
+  # Compare ID of runner on second during play after bunt to IDs of other runners
+  if(batter == second2){
+    return("white")
+  }
+  else if(first == second2){
+    return("black")
+  }
+  else if(second == second2){
+    return("blue")
+  }
+  else{
+    return("pink")
+  }
+  
+}
+
+runner_check_thrid2 <- function(dt, row_num){
+  # Store IDs of runners and batters
+  batter <- dt[row_num, ]$batter
+  first <- dt[row_num, ]$first_baserunner
+  second <- dt[row_num, ]$second_baserunner
+  third2 <- dt[row_num, ]$third_baserunner_2
+  
+  # Compare ID of runner on third during play after bunt to IDs of other runners
+  if(batter == third2){
+    return("white")
+  }
+  else if(first == third2){
+    return("black")
+  }
+  else if(second == third2){
+    return("blue")
+  }
+  else{
+    return("pink")
+  }
+  
+  
+}
+```
+This set of functions looks at a specific row of a data table and tracks the runners on the field after the play. First, the function gathers the ids of the players on each base at the beginning of the plays and assigns them each a color. Then, the following functions make sure that even when the runners move from their original positions, their corresponding colors will remain the same to make it easier to track their movement on the basepaths.
+
+
+
+
+This function looks at a bunt and graphs the movement of runners
+```{r}
+# Draw field function to draw an individual bunt
+field_play_draw <- function(dt, row_num) {
+  
+  # Draw baseball field from sportyR
+  field <- geom_baseball('MLB', display_range = "infield")
+  
+  # Store specific bunt play row of data
+  play <- dt[row_num, ]
+  
+  # If there is no runner on second, draw points for bunt (where acquired by defense), batter as white dot, first base runner as black dot
+  if (play$second_baserunner == 0) {
+    
+    bunt_field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 1) + geom_point(aes(x = 63, y = 63), color = "black", size = 3) + geom_point(aes(x = 0, y = 0), color = "white", size = 3)
+  }
+  
+  # Else there will be a runner on first and second. So add the same points and a blue point for second base runner
+  else {
+    
+    bunt_field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 1) + geom_point(aes(x = 63, y = 63), color = "black", size = 3) + geom_point(aes(x = 0, y = 127), color = "blue", size = 3) + geom_point(aes(x = 0, y = 0), color = "white", size = 3)
+  }
+  
+  # Draws bunt field
+  bunt_field
+  
+}
+field_play_draw(bunt_situation_table, 6)
+
+# Draw field function that shows where runners are on the next play
+draw_play_after <- function(dt, row_num) {
+  
+  # Draw baseball field from sportypy
+  field <- geom_baseball('MLB', display_range = "infield")
+  
+  # Store specific bunt play row of data
+  play <- dt[row_num, ]
+  
+  # Stores color of runners for each base of the play after bunt
+  color_first <- runner_check_first2(dt, row_num)
+  color_second <- runner_check_second2(dt, row_num)
+  color_third <- runner_check_thrid2(dt, row_num)
+  
+  # If there is a runner on first, draw point on first with correct color code
+  if(play$first_baserunner_2 != 0) {
+    
+    field <- field + geom_point(data = dt[row_num, ], aes(x = 63, y = 63), color = color_first, size = 3)
+  }
+  
+  # If there is a runner on second, draw point on second with correct color code
+  if(play$second_baserunner_2 != 0) {
+    
+    field <- field + geom_point(data = dt[row_num, ], aes(x = 0, y = 127), color = color_second, size = 3)
+  }
+  
+  # If there is a runner on third, draw point on third with correct color code
+  if(play$third_baserunner_2 != 0) {
+    
+    field <- field + geom_point(data = dt[row_num, ], aes(x = -63, y = 63), color = color_third, size = 3)
+  }
+  
+  # Draw field
+  field
+}
+
+draw_play_after(bunt_situation_table, 6)
+```
+This code set uses the functions from above to track the movement of baserunners on bunts. The function draws points on a field of where the baserunners are before the bunt, and then shows the location the fielder picked up the bunt as well as where the runners moved to after the bunt play.
+
+
+
+Function determines whether specific bunt was runner movement success or failure
+```{r}
+# Success is defined by the lead runner moving up either one or two bases after the bunt play ends
+success_or_fail <- function(dt, row_num){
+  
+  # Store IDs of runners on different bases for bunt play and following play
+  first <- dt[row_num, ]$first_baserunner
+  second <- dt[row_num, ]$second_baserunner
+  second2 <- dt[row_num, ]$second_baserunner_2
+  third2 <- dt[row_num, ]$third_baserunner_2
+  
+  # If runner on second during bunt play
+  if (second != 0){
+    
+    # If runner on second moves to third after bunt, then sac bunt is successful
+    if (third2 == second){
+    
+      return("success")
+    }
+    
+    # Else the sac bunt is a failure
+    else{
+      return("fail")
+    }
+  }
+  
+  # Else there must be a just a runner on first (by nature of data table conditions)
+  else{
+    
+    # If runner on first moves to second after bunt, then sac bunt is successful
+    if(second2 == first){
+      return("success")
+    }
+    
+    # If runner on first moves to third after bunt, then sac bunt is successful
+    else if(third2 == first){
+      return("success")
+    }
+    
+    # Else the sac bunt is a failure
+    else{
+      return("fail")
+    }
+    
+  }
+  
+}
+success_or_fail(bunt_situation_table, 7)
+```
+This function tracks if the runners move up due to a bunt play. Initially, we looked at the positions of baserunners on the play before the bunt and then right after the bunt. Then, using if statements, we looked at whether the baserunners moved up a base after the bunt play. If the player id for a baserunner matches the player id for a further advanced baserunner on the next play, then the bunt was considered a success. Otherwise, the bunt was a failure.
+
+
+
+Code to determine if a runner has scored
+```{r}
+score = numeric(0)
+games = c()
+first = 2653
+second = 2196
+third = 0
+for(i in 1:(nrow(afterbuntplays)-1)){
+  count = 0
+  if((afterbuntplays[[i,2]]+1)!=afterbuntplays[[i+1,2]]|afterbuntplays[i,1]!=afterbuntplays[i+1,1]){
+    if(first!=0){
+    if (!(first %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    if(second!=0){
+    if (!(second %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    if(third!=0){
+    if (!(third %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    score = append(score,count)
+    games = append(games,afterbuntplays$game_str[i])
+    first = afterbuntplays[i+1,5]
+    second = afterbuntplays[i+1,6]
+    third =  afterbuntplays[i+1,7]
+  }
+  
+  if(i==(nrow(afterbuntplays)-1)){
+    if(first!=0){
+    if (!(first %in% afterbuntplays[i+1,4:7])){
+    count = count + 1
+    }
+    }
+    if(second!=0){
+    if (!(second %in% afterbuntplays[i+1,4:7])){
+    count = count + 1
+    }
+    }
+    if(third!=0){
+    if (!(third %in% afterbuntplays[i+1,4:7])){
+    count = count + 1
+    }
+    }
+    score = append(score,count)
+    games = append(games,afterbuntplays$game_str[i+1])
+  }
+}
+
+gamesnew = as.data.frame(games)
+scorenew = as.data.frame(score)
+fullscores = cbind(gamesnew,scorenew)
+fullscores
+```
+This function looks at our final 22 bunt plays which are in the data file afterbuntplays. This data frame contains each play from the inning in which the bunt occurs, starting with the bunt play. The purpose of this code chunk is to determine which of the innings with a bunt resulted in the  offensive team scoring. First, it creates empty vectors for both the score and game string variables and  sets first, second, and third to be the player numbers for the runners on base after the first bunt. Then, the code looks at the line right before the inning ends by determining a change in the succession of play_per_game, or a change in the game string. If the players are no longer on base at the end of the inning, we determined that they had scored, because after being moved over with a sacrifice bunt, the probability of getting thrown out at a base is very small since we can assume most of the time, the runners are on second or third. If the runner isn't on base at the end of the inning, the score variable increments up by 1, determining that one of the runners that were on base after the bunt scored. Then, the game string and score for that inning are appended to their respective vectors. The second set of if statements deals with the same conditions for the last inning in the files. Then, the games and score vectors are combined into a data frame.
+
+
+Function determines whether specific bunt was runner movement success or failure
+```{r}
+# Success is defined by the lead runner moving up either one or two bases after the bunt play ends
+movement_s_or_f <- function(dt, row_num){
+  
+  # Store IDs of runners on different bases for bunt play and following play
+  first <- dt[row_num, ]$first_baserunner
+  second <- dt[row_num, ]$second_baserunner
+  second2 <- dt[row_num, ]$second_baserunner_2
+  third2 <- dt[row_num, ]$third_baserunner_2
+  
+  # If runner on second during bunt play
+  if (second != 0){
+    
+    # If runner on second moves to third after bunt, then sac bunt is successful
+    if (third2 == second){
+    
+      return("success")
+    }
+    
+    # Else the sac bunt is a failure
+    else{
+      return("fail")
+    }
+  }
+  
+  # Else there must be a just a runner on first (by nature of data table conditions)
+  else{
+    
+    # If runner on first moves to second after bunt, then sac bunt is successful
+    if(second2 == first){
+      return("success")
+    }
+    
+    # If runner on first moves to third after bunt, then sac bunt is successful
+    else if(third2 == first){
+      return("success")
+    }
+    
+    # Else the sac bunt is a failure
+    else{
+      return("fail")
+    }
+    
+  }
+  
+}
+```
+This function looks at the data frame for bunt situations created above and determines if lead runner was moved up on the basepaths as a result of the sacrifice bunt
+
+
+Function determines whether specific bunt resulted in scoring success or failure
+```{r}
+# Success is defined by the offense scoring in the inning after the sac bunt is laid
+score_s_or_f <- function(dt, row_num){
+  
+  play <- dt[row_num, ]
+  
+  if(play$score != 0){
+    return("success")
+  }
+  
+  else{
+    return("fail")
+  }
+}
+```
+This function looks at the data frame for scoring created above and returns success if the score is nonzero and fail if the score is zero.
+
+
+Function draws all bunts and colors them red for runner movement success and blue for runner movement failure
+```{r}
+draw_movement_success_fail <- function(dt){
+  
+  f <- 0
+  s <- 0
+  # Draw baseball field from sportypy
+  field <- geom_baseball('MLB', display_range = "infield")
+  
+  # Loops through each row of bunt plays
+  for (row_num in 1:nrow(dt)){
+    
+    play <- dt[row_num, ]
+    
+    # Checks if bunt is success or fail and stores in var
+    suc_or_fail <- success_or_fail(dt, row_num)
+    
+    # If success, plot the position of bunt when ball acquired using red dot
+    if(suc_or_fail == "success"){
+      
+      field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 2)
+      s <- s + 1
+    }
+    
+    # Else fail, so plot the position of bunt when ball acquired using blue dot
+    else{
+      field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "blue", size = 2)
+      f <- f + 1
+    }
+    
+  }
+  
+  
+  print(paste("Successes:", s))
+  print(paste("Fails:", f))
+  
+  # Draw field
+  field
+}
+draw_movement_success_fail(bunt_situation_table)
+```
+This function looks at whether the bunt play was successful or unsuccessful for moving runners forward. Using the sportyR package, we plotted all the successful bunts in the data frame as red dots and all the unsuccessful bunts in the data frame as blue dots. Then, the function graphs all the bunts by color on an infield.
+
+
+
+Function draws all bunts and colors them red or blue for scoring success or fail respectively
+```{r}
+draw_success_fail_score <- function(dt){
+  
+  f <- 0
+  s <- 0
+  # Draw baseball field from sportyR
+  field <- geom_baseball('MLB', display_range = "infield")
+  
+  # Loops through each row of bunt plays
+  for (row_num in 1:nrow(dt)){
+    
+    play <- dt[row_num, ]
+    
+    # Checks if bunt is success or fail and stores in var
+    suc_or_fail <- score_s_or_f(dt, row_num)
+    
+    # If success, plot the position of bunt when ball acquired using red dot
+    if(suc_or_fail == "success"){
+      
+      field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 1)
+      s <- s + 1
+    }
+    
+    # Else fail, so plot the position of bunt when ball acquired using blue dot
+    else{
+      field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "blue", size = 1)
+      f <- f + 1
+    }
+    
+  }
+  
+  # Draw field
+  field
+  
+  print(paste("Successes:", s))
+  print(paste("Fails:", f))
+}
+draw_success_fail_score(bunt_scores_final)
+```
+This function looks at whether the bunt play was successful or unsuccessful for scoring in the inning. Using the sportyR package, we plotted all the successful bunts in the data frame as red dots and all the unsuccessful bunts in the data frame as blue dots. Then, the function graphs all the bunts by color on an infield.
+
+
+Functions create histograms to compare success and failures from runner movement and scoring models
+```{r}
+draw_movement_histogram <- function(){
+  # Create a data frame with success and fail categories and their respective values
+  data <- data.frame(
+    category = rep(c("Success", "Failure"), each = 13),
+    value = c(rep(19, 13), rep(3, 13))
+  )
+  
+  # Create the side-by-side histograms
+  ggplot(data, aes(x = category, y = value, fill = category)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    labs(title = "Runner Movement Model Sucess vs. Failure", x = "Success or Failure", y = "Count") +
+    scale_fill_manual(values = c("Success" = "red", "Failure" = "blue"))
+}
+draw_movement_histogram()
+
+draw_score_histogram <- function(){
+  # Create a data frame with success and fail categories and their respective values
+  data <- data.frame(
+    category = rep(c("Success", "Failure"), each = 13),
+    value = c(rep(13, 13), rep(9, 13))
+  )
+  
+  # Create the side-by-side histograms
+  ggplot(data, aes(x = category, y = value, fill = category)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    labs(title = "Scoring Model Sucess vs. Failure", x = "Success or Failure", y = "Count") +
+    scale_fill_manual(values = c("Success" = "red", "Failure" = "blue"))
+}
+draw_score_histogram()
+```
