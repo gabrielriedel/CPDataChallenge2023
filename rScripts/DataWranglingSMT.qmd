@@ -1,0 +1,296 @@
+---
+title: "Data Wrangling SMT"
+format:
+  html:
+    theme: default
+---
+
+```{r Setup}
+library(tidyverse)
+library(sportyR)
+```
+
+
+
+Importing the Data
+```{r}
+setwd("/Users/williamkapner/Documents/CPDataChallenge2023/game_info")
+gameinfo1 = read_csv("game_info-1900_01_TeamKJ_TeamB.csv")
+setwd("/Users/williamkapner/Documents/CPDataChallenge2023/ball_pos")
+location1 = read_csv("ball_pos-1900_01_TeamKJ_TeamB.csv")
+location2 = read_csv("ball_pos-1900_02_TeamKJ_TeamB.csv")
+setwd("/Users/williamkapner/Documents/CPDataChallenge2023/game_events")
+gameevents1 = read_csv("game_events-1900_01_TeamKJ_TeamB.csv")
+gameevents2 = read_csv("game_events-1900_02_TeamKJ_TeamB.csv")
+setwd("/Users/williamkapner/Documents/CPDataChallenge2023/player_pos_TeamA1")
+playerpos1 = read_csv("player_pos-1902_17_TeamMB_TeamA1.csv")
+setwd("/Users/williamkapner/Documents/CPDataChallenge2023")
+afterbuntplays = read_csv("after_bunt_plays.csv")
+
+```
+
+
+```{r}
+ballinplay = gameevents1|>
+  filter(event_code==4)
+
+a = location1|>
+  group_by(play_id)|>
+  summarise(timestamp = max(timestamp))
+
+
+joinedmaxtime = left_join(a, location1, by = "timestamp")
+
+ballpositionfiltered = joinedmaxtime|>
+  filter(ball_position_y<=50,ball_position_y>=5)
+
+semi_join(ballinplay,ballpositionfiltered, by = join_by("play_id"=="play_id.x"))
+
+
+```
+
+
+Function for reading all files
+```{r}
+con <- dbConnect(RSQLite::SQLite(), "/Users/williamkapner/Documents/CPDataChallenge2023/data_challenge.db")
+
+
+# SQL query used to clean bunt data
+data_clean_query <- "
+SELECT DISTINCT 
+    g1.game_str, g1.id, g1.play_id, g1.at_bat, g1.play_per_game, 
+    g1.timestamp, g1.player_position, g1.event_code, 
+    b.ball_position_x, b.ball_position_y, b.ball_position_z
+FROM game_events g1
+JOIN game_events g2 
+    ON g1.game_str = g2.game_str
+    AND g1.id = CAST(CAST(g2.id AS INTEGER) + 1 AS TEXT)
+JOIN ball_pos b
+    ON g1.game_str = b.game_str
+    AND g1.timestamp = b.timestamp
+WHERE g1.event_code = 2
+AND g2.event_code = 16
+AND b.ball_position_y > 5 AND b.ball_position_y < 50
+ORDER BY g1.game_str, g1.id;
+"
+
+bunt_table <- dbGetQuery(con, data_clean_query)
+
+dbDisconnect(con)
+
+View(bunt_table)
+```
+
+
+Code to determine if a runner has scored
+```{r}
+13 %in% runnerpos2$row
+score = numeric(0)
+games = c()
+first = 2653
+second = 2196
+third = 0
+for(i in 1:(nrow(afterbuntplays)-1)){
+  count = 0
+  if((afterbuntplays[[i,2]]+1)!=afterbuntplays[[i+1,2]]|afterbuntplays[i,1]!=afterbuntplays[i+1,1]){
+    if(first!=0){
+    if (!(first %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    if(second!=0){
+    if (!(second %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    if(third!=0){
+    if (!(third %in% afterbuntplays[i,4:7])){
+    count = count + 1
+    }
+    }
+    score = append(score,count)
+    games = append(games,afterbuntplays$game_str[i])
+    first = afterbuntplays[i+1,5]
+    second = afterbuntplays[i+1,6]
+    third =  afterbuntplays[i+1,7]
+  }
+  if(i==(nrow(afterbuntplays)-1)){
+    if(first!=0){
+    if (!(first %in% afterbuntplays[i+1,4:7])){
+    count = count + 1
+    }
+    }
+    if(second!=0){
+    if (!(second %in% afterbuntplays[i+1,4:7])){
+    count = count + 1
+    }
+    }
+    if(third!=0){
+    if (!(third %in% afterbuntplays[i+1,4:7])){
+    count = count + 1
+    }
+    }
+    score = append(score,count)
+    games = append(games,afterbuntplays$game_str[i+1])
+  }
+}
+
+score
+games
+gamesnew = as.data.frame(games)
+scorenew = as.data.frame(score)
+fullscores = cbind(gamesnew,scorenew)
+write.csv(fullscores, "fullbuntscores.csv", row.names = FALSE)
+length(score)
+count
+
+afterbuntplays[[1,2]]+1==afterbuntplays[[2,2]]
+2653  %in% afterbuntplays[1,4:7]
+
+runnerscore = function(batter){
+  runnerpos = which(afterbuntplays[,4:7] == batter, arr.ind = TRUE)
+  runnerpos2 = as.data.frame(runnerpos)
+  runnerpos2 = runnerpos2[order(runnerpos2$row), ]
+  score = 0
+  for (i in 1:(nrow(runnerpos2)-1)){
+    
+  if (!(runnerpos2[i,1]+1 %in% runnerpos2$row)){
+    count = count + 1
+    
+  if(3 == runnerpos2[i,2]){
+    print("second base")
+    if (gameinfo1[[j,8]]==gameinfo1[[j+1,8]]){
+      score = score + 1
+    } 
+  }
+  if(4 == runnerpos2[i,2]){
+    print("third base")
+    if (gameinfo1[[j,8]]==gameinfo1[[j+1,8]]){
+      score = score + 1
+    }
+  }
+
+  }
+  }
+  return(score)
+}
+
+runnerscore(2653)
+runnerscore(7225)
+ncol(gameinfo1)
+print(gameinfo1[,18:21])
+
+
+
+
+which(gameinfo1$batter == 7225, arr.ind = TRUE)
+runnerpos = which(gameinfo1[,18:21] == 7225, arr.ind = TRUE)
+length(rower)/2
+rower[[2]]
+rower[3,2]
+
+length(runnerpos)
+runnerpos[[5,2]]
+
+#Code for what base the runner was on before not being on base anymore
+count = 0
+for (i in 1:(length(runnerpos)/2)){
+  if (runnerpos[[i+1]]!=runnerpos[[i]]+1){
+    count = count + 1
+    print(runnerpos[[i,2]])
+  }
+}
+count
+  
+#Code for when the inning changes from top to bottom
+nrow(gameinfo1)
+gameinfo1[[2,8]]==gameinfo1[[3,8]]
+for (j in 1:(nrow(gameinfo1)-1)){
+  if (gameinfo1[[j,8]]!=gameinfo1[[j+1,8]]){
+    print("new inning")
+  }
+}
+
+
+#try to combine for a true/false scoring
+runnerpos = which(gameinfo1[,18:21] == 7225, arr.ind = TRUE)
+runnerpos2 = as.data.frame(runnerpos)
+runnerpos2 = runnerpos2[order(runnerpos2$row), ]
+runnerpos2[8,1]
+length(runnerpos2)
+nrow(runnerpos2)
+runnerscore = logical(length=count)
+
+idx = 0
+for (i in 1:(length(runnerpos)/2)){
+  if (runnerpos2[[i+1]]!=runnerpos2[[i]]+1){
+    idx = idx+1
+    if (gameinfo1[[runnerpos2[i,1],8]]!=gameinfo1[[runnerpos2[i+1,1],8]]){
+      runnerscore[[idx]] = FALSE
+    } else{
+      runnerscore[[idx]] = TRUE
+    }
+  }
+}
+idx
+runnerscore
+
+
+view(gameinfo1)
+for (rownum in 1:10){
+  nextrownum <- rownum + 1
+  if (nextrownum <= 10) {
+      column_index <- matching_rows[matching_rows[, 1] == rownum, 2]
+      
+      if (df[next_row_index, column_index] == target) {
+        cat("Target number found in the same column in the next row.\n")
+      } else {
+        cat("Target number not found in the same column in the next row.\n")
+      }
+    } else {
+      cat("No next row to compare.\n")
+    }
+  else {
+  cat("Target number not found in the data frame.\n")
+    }
+  }
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+Work in progress - Mapping play ids onto a baseball field
+need to change the scale
+```{r}
+playid2 = location1|>
+  filter(play_id==2)
+
+
+geom_baseball(league = "MLB")+
+  geom_point(data = playid2, aes(x=ball_position_x,y=ball_position_y))
+
+```
+
+
+## Testing Ideas
+First Basemen ranging for ground balls toward second base
+first filter to where there's nobody on base
+then find ground balls to right side
+see when it turns out as a baserunner or an out
+who fielded it?
+```{r}
+gameinfo1|>
+  filter(first_baserunner==0, second_baserunner==0, third_baserunner == 0)
+
+plays = data.frame(game_str = character(0))    
+```
+
