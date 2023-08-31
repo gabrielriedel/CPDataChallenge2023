@@ -387,13 +387,13 @@ field_play_draw <- function(dt, row_num) {
   # Store specific bunt play row of data
   play <- dt[row_num, ]
   
-  # If there is no runner on second, draw points for bunt (where acquired by defense), batter as white dot, first base runner as black dot
+  # If there is no runner on second, draw points for bunt (where acquired by defense), batter as white dot, first baserunner as black dot
   if (play$second_baserunner == 0) {
     
     bunt_field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 1) + geom_point(aes(x = 63, y = 63), color = "black", size = 3) + geom_point(aes(x = 0, y = 0), color = "white", size = 3)
   }
   
-  # Else there will be a runner on first and second. So add the same points and a blue point for second base runner
+  # Else there will be a runner on first and second. So add the same points and a blue point for second baserunner
   else {
     
     bunt_field <- field + geom_point(data = play, aes(x = as.numeric(ball_position_x), y = as.numeric(ball_position_y)), color = "red", size = 1) + geom_point(aes(x = 63, y = 63), color = "black", size = 3) + geom_point(aes(x = 0, y = 127), color = "blue", size = 3) + geom_point(aes(x = 0, y = 0), color = "white", size = 3)
@@ -446,7 +446,7 @@ draw_play_after(bunt_situation_table, 6)
 ```
 Visuals 2.2 and 2.3
 
-This code set uses the functions from above to track the movement of base runners on bunts. The function draws points on a field of where the base runners are before the bunt, and then shows the location the fielder picked up the bunt as well as where the runners moved to after the bunt play.
+This code set uses the functions from above to track the movement of baserunners on bunts. The function draws points on a field of where the baserunners are before the bunt, and then shows the location the fielder picked up the bunt as well as where the runners moved to after the bunt play.
 
 
 Code Section 4.1:
