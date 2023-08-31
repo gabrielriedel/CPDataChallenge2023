@@ -12,3 +12,7 @@ install.packages("RSQLite")
 ```
 Also, in order to run the SQL queries in the R scripts you need to have downlaoded our SQLite database. You can find it in the DatabaseLink file in our main git hub repo.
 For simplest access to the code and all files, clone this git hub repo to your device.
+## Folders
+- rScripts folder contains all of the code written in R including data manipulation and algorithm functions
+- csv_folder contains all csv files we created in the process of this project
+- MarkdownFiles folder contains the markdown R scripts and outputs to be viewed that we use as our appendix for our paper
